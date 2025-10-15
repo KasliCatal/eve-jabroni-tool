@@ -50,15 +50,16 @@ export default function Home() {
       <>
         <h3>{title}</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th>Name</th><th>Type ID</th><th>Jita Price (ISK)</th><th>NPC Price (ISK)</th><th>Savings (ISK)</th></tr></thead>
+          <thead><tr><th>Name</th><th>Type ID</th><th>Jita Price (ISK)</th><th>NPC Price (ISK)</th><th>Savings (ISK)</th><th>Notes</th></tr></thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.type_id}>
                 <td>{item.name}</td>
                 <td>{item.type_id}</td>
                 <td>{(item.jita_price || 0).toLocaleString()} {item.fallback ? '(Region fallback)' : ''}</td>
-                <td>{(item.npc_price || 0).toLocaleString()}</td>
+                <td>{item.npc_price !== null ? item.npc_price.toLocaleString() : 'N/A'}</td>
                 <td>{(item.savings || 0).toLocaleString()}</td>
+                <td>{item.npc_price === null ? 'No NPC option (market only)' : ''}</td>
               </tr>
             ))}
           </tbody>
