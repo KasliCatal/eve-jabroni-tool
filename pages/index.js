@@ -1,9 +1,11 @@
-'use client'; // Client-side only for hooks
+'use client';
 import { useState } from 'react';
 
 export default function Home() {
   const [input, setInput] = useState('');
-  const [results, setResults] = useState([]);
+  const [betterJita, setBetterJita] = useState([]);
+  const [betterNPC, setBetterNPC] = useState([]);
+  const [totalSavings, setTotalSavings] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -11,9 +13,11 @@ export default function Home() {
     e?.preventDefault();
     setLoading(true);
     setError(null);
-    setResults([]);
+    setBetterJita([]);
+    setBetterNPC([]);
+    setTotalSavings(0);
 
-    // Parse: split by newline, trim, remove trailing levels (e.g., " I", " II", " 1"), deduplicate
+    // Parse: split by newline, trim, remove trailing levels, deduplicate
     const names = [...new Set(input.split('\n')
       .map(line => line.replace(/\s+[IVXLCDM\d]+$/, '').trim())
       .filter(name => name.length > 0))];
@@ -28,11 +32,13 @@ export default function Home() {
       const res = await fetch('/api/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(names.slice(0, 1000)) // ESI limit: 1000
+        body: JSON.stringify(names.slice(0, 1000))
       });
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
-      setResults(data.inventory_types || []);
+      setBetterJita(data.betterJita || []);
+      setBetterNPC(data.betterNPC || []);
+      setTotalSavings(data.totalSavings || 0);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,9 +46,31 @@ export default function Home() {
     }
   };
 
+  const renderTable = (items, title) => (
+    items.length > 0 && (
+      <>
+        <h3>{title}</h3>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr><th>Name</th><th>Type ID</th><th>Jita Price (ISK)</th><th>NPC Price (ISK)</th><th>Savings (ISK)</th></tr></thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.type_id}>
+                <td>{item.name}</td>
+                <td>{item.type_id}</td>
+                <td>{item.jita_price.toLocaleString()} {item.fallback ? '(Region fallback)' : ''}</td>
+                <td>{item.npc_price.toLocaleString()}</td>
+                <td>{item.savings.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    )
+  );
+
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: 'auto' }}>
-      <h1>EVE Skill Resolver</h1>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: 'auto' }}>
+      <h1>EVE Skill Resolver & Price Comparator</h1>
       <form onSubmit={handleSubmit}>
         <textarea
           value={input}
@@ -51,20 +79,13 @@ export default function Home() {
           rows={10}
           style={{ width: '100%', marginBottom: '10px' }}
         />
-        <button type="submit" disabled={loading}>Resolve to Type IDs</button>
+        <button type="submit" disabled={loading}>Resolve & Compare Prices</button>
       </form>
       {loading && <p>Loading...</p>}
       {error && <p>Error: {error}</p>}
-      {results.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th>Name</th><th>Type ID</th></tr></thead>
-          <tbody>
-            {results.map((item) => (
-              <tr key={item.id}><td>{item.name}</td><td>{item.id}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {renderTable(betterJita, 'Better to Buy in Jita 4-4')}
+      {renderTable(betterNPC, 'Better to Buy in NPC School Stations (e.g., School of Applied Knowledge in Josameto)')}
+      {totalSavings > 0 && <p><strong>Total Savings: {totalSavings.toLocaleString()} ISK</strong></p>}
     </div>
   );
 }
