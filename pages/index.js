@@ -17,7 +17,6 @@ export default function Home() {
     setBetterNPC([]);
     setTotalSavings(0);
 
-    // Parse: split by newline, trim, remove trailing levels, deduplicate
     const names = [...new Set(input.split('\n')
       .map(line => line.replace(/\s+[IVXLCDM\d]+$/, '').trim())
       .filter(name => name.length > 0))];
@@ -57,9 +56,9 @@ export default function Home() {
               <tr key={item.type_id}>
                 <td>{item.name}</td>
                 <td>{item.type_id}</td>
-                <td>{item.jita_price.toLocaleString()} {item.fallback ? '(Region fallback)' : ''}</td>
-                <td>{item.npc_price.toLocaleString()}</td>
-                <td>{item.savings.toLocaleString()}</td>
+                <td>{(item.jita_price || 0).toLocaleString()} {item.fallback ? '(Region fallback)' : ''}</td>
+                <td>{(item.npc_price || 0).toLocaleString()}</td>
+                <td>{(item.savings || 0).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
