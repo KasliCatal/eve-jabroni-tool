@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-module.exports = nextConfig;
+module.exports = {
+  // Optional: Increase body size if large lists, per Next.js docs
+  api: { bodyParser: { sizeLimit: '1mb' } }
+};
