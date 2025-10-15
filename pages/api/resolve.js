@@ -13,10 +13,11 @@ export default async function handler(req, res) {
 
   try {
     const esiBase = 'https://esi.evetech.net/latest';
-    const userAgent = 'EveJabroniTool/0.1 (kaslicatal@example.com)'; // Replace with your email
+    const userAgent = 'EveJabroniTool/0.1 (your.email@example.com)'; // Replace with your email
     const npcPricesPath = path.join(process.cwd(), 'data/npc-prices.json');
     const npcPricesRaw = fs.readFileSync(npcPricesPath, 'utf8');
-    const npcPrices = JSON.parse(npcPricesRaw);
+    const npcPricesData = JSON.parse(npcPricesRaw);
+    const npcPrices = npcPricesData.prices; // Access the 'prices' object from JSON
 
     const idsRes = await fetch(`${esiBase}/universe/ids/?datasource=tranquility`, {
       method: 'POST',
@@ -52,7 +53,8 @@ export default async function handler(req, res) {
     let totalSavings = 0;
 
     for (const { type_id, name } of skillbooks) {
-      const npc_price = npcPrices[type_id.toString()] || 0;
+      const npc_price = npcPrices[name] !== null ? npcPrices[name] : null; // Use null for non-seeded
+
       const ordersRes = await fetch(`${esiBase}/markets/10000002/orders/?datasource=tranquility&order_type=sell&type_id=${type_id}`, {
         headers: { 'User-Agent': userAgent }
       });
@@ -72,14 +74,23 @@ export default async function handler(req, res) {
         }
       }
 
-      jita_price = jita_price === Infinity ? 0 : jita_price; // Fallback to 0 if no data
-      const savings = npc_price > jita_price ? npc_price - jita_price : 0;
+      jita_price = jita_price === Infinity ? null : jita_price; // Null if no market data
+
+      if (jita_price === null) continue; // Skip if no Jita data
+
+      let savings = 0;
+      if (npc_price !== null) {
+        savings = npc_price > jita_price ? npc_price - jita_price : jita_price - npc_price;
+      } // For null NPC, savings = 0 (market only)
+
       const item = { name, type_id, jita_price, npc_price, savings, fallback };
 
-      if (jita_price < npc_price && jita_price > 0) {
+      if (npc_price !== null && jita_price < npc_price) {
         betterJita.push(item);
-      } else if (npc_price > 0) {
+      } else if (npc_price !== null) {
         betterNPC.push(item);
+      } else {
+        betterJita.push(item); // Non-seeded go to Jita
       }
       totalSavings += savings;
     }
