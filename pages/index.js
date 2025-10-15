@@ -13,10 +13,10 @@ export default function Home() {
     setError(null);
     setResults([]);
 
-    // Parse: split by newline, trim, remove trailing levels (e.g., " I", " II", " 1")
-    const names = input.split('\n')
+    // Parse: split by newline, trim, remove trailing levels (e.g., " I", " II", " 1"), deduplicate
+    const names = [...new Set(input.split('\n')
       .map(line => line.replace(/\s+[IVXLCDM\d]+$/, '').trim())
-      .filter(name => name.length > 0);
+      .filter(name => name.length > 0))];
 
     if (names.length === 0) {
       setError('No valid names found');
