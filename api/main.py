@@ -100,7 +100,7 @@ base_prices = {
 
 def run_skillbook_tool():
     output = io.StringIO()
-    jita_buy_list = []  # (name, quantity, min_price) - added min_price for total
+    jita_buy_list = []  # (name, quantity, min_price)
     npc_buy_list = []   # (name, base_price)
 
     for skill in skill_names:
@@ -149,7 +149,7 @@ def run_skillbook_tool():
     if jita_buy_list:
         for name, qty, _ in jita_buy_list:
             output.write(f"{name}\t{qty}\n")  # Copy-paste this block into EVE multi-buy
-        total_jita = sum(price for _, _, price in jita_buy_list)
+        total_jita = sum(price for _, _, price in jita_buy_list) if jita_buy_list else 0
         output.write(f"\nTotal estimated cost: {total_jita:,.0f} ISK\n")
     else:
         output.write("No items cheaper in Jita.\n")
@@ -164,7 +164,7 @@ def run_skillbook_tool():
     else:
         output.write("No items cheaper from NPC.\n")
 
-    grand_total = sum(price for _, _, price in jita_buy_list) + sum(price for _, price in npc_buy_list)
+    grand_total = total_jita + sum(price for _, price in npc_buy_list)
     output.write(f"\nGrand total estimated cost: {grand_total:,.0f} ISK\n")
 
     return output.getvalue()
